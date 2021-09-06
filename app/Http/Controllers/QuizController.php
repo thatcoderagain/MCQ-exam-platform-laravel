@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quiz;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class QuizController extends Controller
@@ -35,11 +36,24 @@ class QuizController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'title'=> ['required', 'string', 'min:10', 'max:255'],
+            'description' => ['required', 'string', 'min:10'],
+            'duration' => ['required', 'numeric', 'min:5', 'max:180']
+        ]);
+
+        $quiz = Quiz::create([
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'duration' => $request->input('duration'),
+            'created_by' => auth()->id()
+        ]);
+
+        return response()->redirectTo("/quiz/{$quiz->id}/question/add");
     }
 
     /**

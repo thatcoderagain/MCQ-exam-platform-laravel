@@ -9,6 +9,8 @@ class Quiz extends Model
 {
     use HasFactory;
 
+    protected $fillable = ['title', 'description', 'duration', 'created_by'];
+
     public function user() {
         return $this->belongsTo(User::class, 'id');
     }

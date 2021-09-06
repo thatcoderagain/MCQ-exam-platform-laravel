@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,11 +24,13 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::prefix('/quiz')->group(function () {
-    Route::get('/list/{page?}', [QuizController::class, 'index']);
+    Route::get('/list/{page?}', [QuizController::class, 'index'])->name('quiz-list');
 });
 
 Route::middleware('auth')->group(function () {
     Route::prefix('/quiz')->group(function () {
         Route::get('/create', [QuizController::class, 'create']);
+        Route::post('/store', [QuizController::class, 'store'])->name('quiz-store');
+        Route::get('/{quizId}/question/add', [QuestionController::class, 'create'])->name('quiz-question-add');
     });
 });
