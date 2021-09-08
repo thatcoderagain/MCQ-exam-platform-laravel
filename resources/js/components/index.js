@@ -1,3 +1,4 @@
 module.exports = [
-    ...require('./question'),
+    require('./addQuestion'),
+    require('./createQuiz'),
 ];

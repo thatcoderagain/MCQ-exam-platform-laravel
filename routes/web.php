@@ -32,5 +32,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [QuizController::class, 'create']);
         Route::post('/store', [QuizController::class, 'store'])->name('quiz-store');
         Route::get('/{quizId}/question/add', [QuestionController::class, 'create'])->name('quiz-question-add');
+        Route::post('/{quizId}/question/store', [QuestionController::class, 'store'])->name('quiz-question-store');
     });
 });

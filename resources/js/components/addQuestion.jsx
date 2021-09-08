@@ -1,16 +1,27 @@
-import React, {useEffect, useState} from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
+import RawHTML from "./RawHTML";
 
-export let AddQuestion;
-AddQuestion = () => {
+export const AddQuestion = (props) => {
     const [question, setQuestion] = useState('');
     const [optionType, setOptionType] = useState('radio');
     const [optionCount, setOptionCount] = useState(4);
     const [options, setOptions] = useState([
         {title: '', media: ''}, {title: '', media: ''}, {title: '', media: ''}, {title: '', media: ''}
     ]);
-    const [error, setError] = useState('');
+    const [saveMode, setSaveMode] = useState('');
     const [valid, setValid] = useState(false);
+    const [error, setError] = useState('');
+    const [showError, setShowError] = useState(false);
+
+    const validate = () => {
+        if (error.length > 0) {
+            setShowError(true);
+            setTimeout(() => {
+                setShowError(false);
+            }, 5000);
+        }
+    };
 
     const updateOptionCount = (number, index = null) => {
         event.preventDefault();
@@ -29,15 +40,33 @@ AddQuestion = () => {
         setOptions([...options.slice(0, index), {title: value, media: ''}, ...options.slice(index + 1)]);
     };
 
+    const hasDuplicates = (array) => {
+        return (new Set(array)).size !== array.length;
+    };
+
+    const submit = (type) => {
+        setSaveMode(type);
+        $(this).closest("form").submit();
+    };
+
     useEffect(() => {
+
         let valid = true;
-        if (error.length > 0 || question.legth < 10 ||
-            (optionType !== 'radio' && optionType !== 'checkbox') ||
-            (optionCount < 2 && optionCount > 8)) {
+        if (question.length < 10) {
+            setError('Questions should be at least 10 characters long.');
+            valid = false;
+        } else if (optionType !== 'radio' && optionType !== 'checkbox') {
+            setError('Options type can only be either Radio or Checkbox.');
+            valid = false;
+        } else if (!Number.isInteger(optionCount) || (optionCount < 2 && optionCount > 8)) {
+            setError('Option count must be between 5 to 180 minutes.');
             valid = false;
         }
-        // mark validity invalid if any options is blank
-        if (options.filter((i) => !i.title.length).length) {
+        else if (options.filter((i) => !i.title.trim().length).length) {
+            setError('No option can be empty.');
+            valid = false;
+        } else if (hasDuplicates(options.map((i) => i.title.trim()))) {
+            setError('Options can\'t have duplicate values.');
             valid = false;
         }
         setValid(valid);
@@ -53,10 +82,9 @@ AddQuestion = () => {
                 <div className="card-body">
                     <div className="row">
                         {
-                            error.length > 0 &&
-                            <div className="alert alert-danger col-12" role="alert">
-                                {error}
-                            </div>
+                            showError
+                                ? <div className="col-12"><div className="alert alert-danger" role="alert">{error}</div></div>
+                                : <RawHTML className="col-12">{props.children}</RawHTML>
                         }
                         <div className="form-group col-12">
                             <label>Question</label>
@@ -103,7 +131,7 @@ AddQuestion = () => {
                         </div>
                         {
                             options.map((option, index) =>
-                                <div className="col-md-8" key={index}>
+                                <div className="col-md-6 mr-4" key={index}>
                                     <div className="form-group">
                                         <label>Option {index + 1}</label>
                                         <div className="input-group mb-3">
@@ -123,14 +151,21 @@ AddQuestion = () => {
                         }
                     </div>
 
-                    {/*<input type="password" className="form-control"*/}
-                    {/*       onChange={(event) => setPassword(event.target.value)}*/}
-                    {/*       value={password}*/}
-                    {/*/>*/}
-
                     <div className="form-group col-12">
-                        <button type="button" disabled={!valid} className="btn btn-success mr-2 float-right">Save</button>
-                        <button type="button" disabled={!valid} className="btn btn-light mx-2 float-right">Add More</button>
+                        <div className="form-group col-12">
+                            <input type="hidden" name="saveMode" value={saveMode}/>
+                            {
+                                valid
+                                    ? <Fragment>
+                                        <button type="button" onClick={() => submit('save')} className="btn btn-success mr-2 float-right">Save & Finish</button>
+                                        <button type="button" onClick={() => submit('add-more')} className="btn btn-success mr-2 float-right">Add More</button>
+                                    </Fragment>
+                                    : <Fragment>
+                                        <button type="button" onClick={validate} className="btn btn-outline-success mr-2 float-right">Save & Finish</button>
+                                        <button type="button" onClick={validate} className="btn btn-outline-success mr-2 float-right">Add More</button>
+                                    </Fragment>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
@@ -139,5 +174,6 @@ AddQuestion = () => {
 };
 
 if (document.getElementById('AddQuestion')) {
-    ReactDOM.render(<AddQuestion />, document.querySelector('#AddQuestion'));
+    ReactDOM.render(<AddQuestion>{document.querySelector('#AddQuestion').innerHTML}</AddQuestion>,
+        document.querySelector('#AddQuestion'));
 }
