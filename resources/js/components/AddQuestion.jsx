@@ -3,11 +3,12 @@ import ReactDOM from 'react-dom';
 import RawHTML from "./RawHTML";
 
 export const AddQuestion = (props) => {
+    const optionObject = {title: '', media: '', correctness: false};
     const [question, setQuestion] = useState('');
     const [optionType, setOptionType] = useState('radio');
     const [optionCount, setOptionCount] = useState(4);
     const [options, setOptions] = useState([
-        {title: '', media: ''}, {title: '', media: ''}, {title: '', media: ''}, {title: '', media: ''}
+        optionObject, optionObject, optionObject, optionObject
     ]);
     const [saveMode, setSaveMode] = useState('');
     const [valid, setValid] = useState(false);
@@ -30,14 +31,25 @@ export const AddQuestion = (props) => {
             if (number < 0) {
                 setOptions([...options.slice(0, index), ...options.slice(index + 1)]);
             } else {
-                setOptions([...options, ...[{title: '', media: ''}]])
+                setOptions([...options, ...[{...optionObject}]])
             }
         }
     };
 
     const updateOption = (event, index) => {
         let value = event.target.value;
-        setOptions([...options.slice(0, index), {title: value, media: ''}, ...options.slice(index + 1)]);
+        setOptions([...options.slice(0, index), {...options[index], title: value}, ...options.slice(index + 1)]);
+    };
+
+    const updateCorrectness = (event, index) => {
+        let value = event.target.checked;
+        if (optionType === 'radio') {
+            setOptions(options.map((option, i) => {
+                return {...option, correctness: index === i ? value : false};
+            }, index))
+        } else {
+            setOptions([...options.slice(0, index), {...options[index], correctness: value}, ...options.slice(index + 1)]);
+        }
     };
 
     const hasDuplicates = (array) => {
@@ -46,11 +58,15 @@ export const AddQuestion = (props) => {
 
     const submit = (type) => {
         setSaveMode(type);
-        $(this).closest("form").submit();
     };
 
     useEffect(() => {
+        if (valid && (saveMode === 'finish' || saveMode === 'add_more')) {
+            $('#AddQuestionForm').closest("form").submit();
+        }
+    }, [saveMode]);
 
+    useEffect(() => {
         let valid = true;
         if (question.length < 10) {
             setError('Questions should be at least 10 characters long.');
@@ -67,6 +83,9 @@ export const AddQuestion = (props) => {
             valid = false;
         } else if (hasDuplicates(options.map((i) => i.title.trim()))) {
             setError('Options can\'t have duplicate values.');
+            valid = false;
+        } else if (options.filter((i) => i.correctness).length === 0) {
+            setError('At least one option should be correct and checked.');
             valid = false;
         }
         setValid(valid);
@@ -100,7 +119,7 @@ export const AddQuestion = (props) => {
                             <div className="form-group">
                                 <label>Option Type</label>
                                 <div className="input-group mb-3">
-                                    <select className="custom-select" defaultValue="radio"
+                                    <select className="custom-select" name="optionType" defaultValue="radio"
                                             onChange={(event) => setOptionType(event.target.value)}>
                                         <option value="radio">Radio - Single Selection Type</option>
                                         <option value="checkbox">Checkbox - Multiple Selection Type</option>
@@ -138,11 +157,13 @@ export const AddQuestion = (props) => {
                                             <div className="input-group-prepend">
                                                 <div className="input-group-text">
                                                     <input type={optionType === 'checkbox' ? 'checkbox' : 'radio'}
-                                                           aria-label="Checkbox for following text input"
+                                                           name="correctness[]"
+                                                           value={index} defaultChecked={option.correctness}
+                                                           onChange={(event) => updateCorrectness(event, index)}
                                                     />
                                                 </div>
                                             </div>
-                                            <input type="text" className="form-control"
+                                            <input type="text" className="form-control" name="options[]" value={option.title}
                                                    onChange={(event) => updateOption(event, index)}/>
                                         </div>
                                     </div>
@@ -157,8 +178,8 @@ export const AddQuestion = (props) => {
                             {
                                 valid
                                     ? <Fragment>
-                                        <button type="button" onClick={() => submit('save')} className="btn btn-success mr-2 float-right">Save & Finish</button>
-                                        <button type="button" onClick={() => submit('add-more')} className="btn btn-success mr-2 float-right">Add More</button>
+                                        <button type="button" onClick={() => submit('finish')} className="btn btn-success mr-2 float-right">Save & Finish</button>
+                                        <button type="button" onClick={() => submit('add_more')} className="btn btn-success mr-2 float-right">Add More</button>
                                     </Fragment>
                                     : <Fragment>
                                         <button type="button" onClick={validate} className="btn btn-outline-success mr-2 float-right">Save & Finish</button>

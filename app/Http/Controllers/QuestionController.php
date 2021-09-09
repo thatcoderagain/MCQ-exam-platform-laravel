@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Option;
 use App\Models\Question;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
@@ -31,12 +33,52 @@ class QuestionController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param \Illuminate\Http\Request $request
+     * @param Quiz $quiz
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, $quizId)
     {
-        //
+        $request->validate([
+            'question'      => ['required', 'string', 'min:10', 'max:255'],
+            'optionType'    => ['required', 'string', 'in:radio,checkbox'],
+            'options'       => ['required', 'array'],
+            'options.*'     => ['required', 'string', 'distinct'],
+            'correctness'   => ['required', 'array'],
+            'correctness.*' => ['required'],
+            'saveMode'      => ['required', 'string', 'in:finish,add_more'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $question = Question::create([
+                'quiz_id'     => $quizId,
+                'question'    => $request->input('question'),
+                'option_type' => $request->input('optionType'),
+            ]);
+
+            $option      = $request->input('options');
+            $correctness = $request->input('correctness');
+            $saveMode    = $request->input('saveMode');
+
+            collect($option)
+                ->map(function ($option, $index) use ($question, $correctness) {
+                    Option::create([
+                        'question_id' => $question->id,
+                        'title'       => $option,
+                        'correctness' => in_array($index, $correctness) ? 'correct' : 'incorrect',
+                    ]);
+                });
+
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+        }
+
+        if ($saveMode === 'finish') {
+            return response()->redirectTo("/quiz/{$quizId}/question/add");
+        }
+        return response()->redirectToRoute('quiz-list');
     }
 
     /**

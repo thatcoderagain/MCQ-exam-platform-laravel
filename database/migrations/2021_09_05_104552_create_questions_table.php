@@ -16,7 +16,7 @@ class CreateQuestionsTable extends Migration
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('quiz_id');
-            $table->string('question');
+            $table->string('title');
             $table->json('media')->nullable();
             $table->enum('option_type', ['radio', 'checkbox']);
             $table->timestamps();
