@@ -8,17 +8,31 @@ use Illuminate\Http\Request;
 
 class QuizController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     *
-     */
-    public function index(Request $request, $page = 1)
+    const PAGE_LIMIT = 10;
+
+    public function fullList(Request $request)
     {
         $quizzes = Quiz::with('user')
             ->orderByDesc('id')
-            ->limit($page*10)
-            ->get();
+            ->paginate(self::PAGE_LIMIT);
+        return view('quiz.list')->with('quizzes', $quizzes);
+    }
+
+    public function myList(Request $request)
+    {
+        $quizzes = Quiz::with('user')
+            ->where('user_id', auth()->id())
+            ->orderByDesc('id')
+            ->paginate(self::PAGE_LIMIT);
+        return view('quiz.list')->with('quizzes', $quizzes);
+    }
+
+    public function userList(Request $request, $userId)
+    {
+        $quizzes = Quiz::with('user')
+            ->where('user_id', $userId)
+            ->orderByDesc('id')
+            ->paginate(self::PAGE_LIMIT);
         return view('quiz.list')->with('quizzes', $quizzes);
     }
 
@@ -40,7 +54,6 @@ class QuizController extends Controller
      */
     public function store(Request $request)
     {
-        return $request->all();
         $request->validate([
             'title'       => ['required', 'string', 'min:10', 'max:255'],
             'description' => ['required', 'string', 'min:10'],
@@ -51,7 +64,7 @@ class QuizController extends Controller
             'title' => $request->input('title'),
             'description' => $request->input('description'),
             'duration' => $request->input('duration'),
-            'created_by' => auth()->id()
+            'user_id' => auth()->id()
         ]);
 
         return response()->redirectTo("/quiz/{$quiz->id}/question/add");

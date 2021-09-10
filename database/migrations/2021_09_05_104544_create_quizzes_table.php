@@ -15,13 +15,13 @@ class CreateQuizzesTable extends Migration
     {
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id');
             $table->string('title');
             $table->string('description')->nullable();
             $table->unsignedSmallInteger('duration');
-            $table->unsignedBigInteger('created_by');
             $table->timestamps();
 
-            $table->foreign('created_by')->on('users')->references('id');
+            $table->foreign('user_id')->on('users')->references('id');
         });
     }
 
