@@ -5,12 +5,21 @@
     <div class="row justify-content-center">
         @auth
             <div class="col-md-12">
-                <div class="row">
-                    <div class="col text-right mb-3">
+                <div class="row mb-3">
+                    <div class="col-md-6 col-sm-12">
                         <div class="btn-group" role="group">
-                            <a href="{{ route('quiz-my-list') }}" class="btn btn-outline-primary">My Quizzes</a>
-                            <a href="{{ route('quiz-create') }}" class="btn btn-outline-primary">Create Quiz</a>
+                            <a href="{{ route('quiz-create') }}" class="btn btn-outline-primary">
+                                <i class="far fa-plus-square"></i>&nbsp;&nbsp;Create Quiz
+                            </a>
+                            <a href="{{ route('quiz-my-list') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i>&nbsp;&nbsp;My Quizzes
+                            </a>
                         </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <span class="float-right">
+                            {{ $quizzes->links() }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -24,6 +33,9 @@
                             <li>No records found!</li>
                         </ul>
                     </div>
+                    <div class="col-md-6 offset-5">
+                        {{ $quizzes->links() }}
+                    </div>
                 @else
                     <div class="col-4">
                         <div class="list-group" id="quiz-tab" role="tablist">
@@ -33,13 +45,6 @@
                                 @php($active = '')
                             @endforeach
                         </div>
-{{--                            {{$quizzes}}--}}
-{{--                        <div class="btn-group" role="group">--}}
-{{--                            @foreach($quizzes->links as $link)--}}
-{{--                                <a href="{{ route('quiz-my-list') }}" class="btn btn-outline-primary">My Quizzes</a>--}}
-{{--                                <a href="{{ route('quiz-create') }}" class="btn btn-outline-primary">Create Quiz</a>--}}
-{{--                            @endforeach--}}
-{{--                        </div>--}}
                     </div>
                     <div class="col-8">
                         <div class="tab-content" id="quiz-tabContent">
@@ -68,6 +73,11 @@
                                 </div>
                                 @php($active = '')
                             @endforeach
+                        </div>
+                    </div>
+                    <div class="col-md-12 mt-4">
+                        <div class="d-flex justify-content-center">
+                            {{ $quizzes->links() }}
                         </div>
                     </div>
                     @endif

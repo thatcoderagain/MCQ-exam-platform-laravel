@@ -76,9 +76,9 @@ class QuestionController extends Controller
         }
 
         if ($saveMode === 'finish') {
-            return response()->redirectTo("/quiz/{$quizId}/question/add");
+            return response()->redirectToRoute('quiz-list');
         }
-        return response()->redirectToRoute('quiz-list');
+        return response()->redirectTo("/quiz/{$quizId}/question/add");
     }
 
     /**
