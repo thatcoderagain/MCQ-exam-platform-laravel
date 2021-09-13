@@ -11,7 +11,9 @@ class Option extends Model
 
     protected $fillable = ['question_id', 'title', 'correctness'];
 
+    protected $hidden = ['correctness'];
+
     public function question() {
-        return $this->belongsTo(Question::class, 'id');
+        return $this->belongsTo(Question::class);
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +25,6 @@ Auth::routes();
 
 Route::prefix('/quiz')->group(function () {
     Route::get('/list', [QuizController::class, 'fullList'])->name('quiz-list');
-    Route::get('/my-list', [QuizController::class, 'myList'])->name('quiz-my-list');
     Route::get('/user/{userId}/list', [QuizController::class, 'userList'])->name('quiz-user-list');
 });
 
@@ -34,5 +34,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/store', [QuizController::class, 'store'])->name('quiz-store');
         Route::get('/{quizId}/question/add', [QuestionController::class, 'create'])->name('quiz-question-add');
         Route::post('/{quizId}/question/store', [QuestionController::class, 'store'])->name('quiz-question-store');
+
+        Route::get('/my-list', [QuizController::class, 'myList'])->name('quiz-my-list');
+    });
+    Route::prefix('/test')->group(function () {
+        Route::get('/quiz/{quizId}/question/{questionId}', [TestController::class, 'takeTestAttempt'])->name('take-test-attempt');
+        Route::post('/quiz/{quizId}/save', [TestController::class, 'saveTestAttempt'])->name('save-attempt');
     });
 });

@@ -12,10 +12,10 @@ class Question extends Model
     protected $fillable = ['quiz_id', 'title', 'option_type'];
 
     public function quiz() {
-        return $this->belongsTo(Question::class, 'id');
+        return $this->belongsTo(Quiz::class);
     }
 
     public function options() {
-        return $this->hasMany(Option::class, 'id');
+        return $this->hasMany(Option::class);
     }
 }

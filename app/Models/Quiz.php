@@ -12,10 +12,10 @@ class Quiz extends Model
     protected $fillable = ['title', 'description', 'duration', 'user_id'];
 
     public function user() {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 
     public function questions() {
-        return $this->hasMany(Question::class, 'id');
+        return $this->hasMany(Question::class);
     }
 }
