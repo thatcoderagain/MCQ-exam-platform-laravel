@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,12 +17,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/quiz/list');
 });
 
 Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::prefix('/quiz')->group(function () {
     Route::get('/list', [QuizController::class, 'fullList'])->name('quiz-list');
