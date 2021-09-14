@@ -66,7 +66,7 @@
                                                 @if ($quiz->user->id === auth()->id())
                                                     <a class="btn btn-success" href="#"><b>Edit quiz</b></a>
                                                 @endif
-                                                <a class="btn btn-danger" href="{{route('take-test-attempt', [$quiz->id])}}"><b>Take quiz</b></a>
+                                                <a class="btn btn-danger" href="{{route('take-test-attempt', [$quiz->id, $questionNumber = 1])}}"><b>Take quiz</b></a>
                                             </div>
                                         </div>
                                     </div>

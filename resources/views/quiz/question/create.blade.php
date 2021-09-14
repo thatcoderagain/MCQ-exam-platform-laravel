@@ -4,7 +4,7 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12">
-                <form id="AddQuestionForm" method="POST" action="{{ route('quiz-question-store', [request()->quizId]) }}">
+                <form id="AddQuestionForm" method="POST" action="{{ route('quiz-question-store', [request()->quiz->id]) }}">
                     @csrf
                     <div id="AddQuestion">
                         @include('layouts.validationErrorBlock')

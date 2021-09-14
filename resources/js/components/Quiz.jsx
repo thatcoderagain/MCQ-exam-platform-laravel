@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import RawHTML from "./RawHTML";
 
 export const Quiz = (props) => {
-    console.log(props);
     const parsedQuestion = JSON.parse(props.question);
     const parsedQuestions = JSON.parse(props.questions);
     const paresedseenQuestions = JSON.parse(props.seenQuestions);
@@ -13,9 +12,9 @@ export const Quiz = (props) => {
     const [quizId, setQuizId] = useState(parseInt(props.quizId));
     const [question, setQuestion] = useState(parsedQuestion);
     const [questions, setQuestions] = useState(parsedQuestions);
-    const [seenQuestions, setSeenQuestions] = useState(parsedQuestions);
-    const [attemptedQuestions, setAttemptedQuestions] = useState(parsedQuestions);
-    const [markedForReviewQuestions, setMarkedForReviewQuestions] = useState(parsedQuestions);
+    const [seenQuestions, setSeenQuestions] = useState(paresedseenQuestions);
+    const [attemptedQuestions, setAttemptedQuestions] = useState(paresedattemptedQuestions);
+    const [markedForReviewQuestions, setMarkedForReviewQuestions] = useState(paresedmarkedForReviewQuestions);
     const [selectedQuestion, setSelectedQuestion] = useState(parseInt(props.selectedQuestion));
 
     const [options, setOptions] = useState([]);
@@ -42,10 +41,21 @@ export const Quiz = (props) => {
                         <div className="col">
                             {
                                 questions.map((question, index) => {
+                                    let buttonColor;
+                                    if (selectedQuestion === index) {
+                                        buttonColor = 'btn-primary';
+                                    } else if (markedForReviewQuestions.includes(question.id)) {
+                                        buttonColor = 'btn-danger';
+                                    } else if (attemptedQuestions.includes(question.id)) {
+                                        buttonColor = 'btn-success';
+                                    } else if (seenQuestions.includes(question.id)) {
+                                        buttonColor = 'btn-warning';
+                                    } else {
+                                         buttonColor = 'btn-secondary';
+                                    }
                                     let url = '/test/quiz/'+quizId+'/question/'+(index+1);
-                                    let buttonColor = selectedQuestion === index ? 'btn-primary' : 'btn-secondary';
                                     return <a href={url}
-                                        key={index} type="button" className={"btn btn-sm btn-primary m-1 "+buttonColor}>{index+1}</a>
+                                        key={index} type="button" className={"btn btn-sm m-1 "+buttonColor}>{index+1}</a>
                                 })
                             }
                         </div>

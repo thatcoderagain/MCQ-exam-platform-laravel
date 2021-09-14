@@ -175,6 +175,7 @@ export const AddQuestion = (props) => {
                     <div className="form-group col-12">
                         <div className="form-group col-12">
                             <input type="hidden" name="saveMode" value={saveMode}/>
+                            <a href="/quiz/list/" type="button" className="btn btn-outline-danger mr-2 float-right">Cancel</a>
                             {
                                 valid
                                     ? <Fragment>

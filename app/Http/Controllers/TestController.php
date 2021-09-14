@@ -9,21 +9,19 @@ use Illuminate\Support\Facades\Session;
 
 class TestController extends Controller
 {
-    public function takeTestAttempt(Request $request, $quizId, $questionNumber = 1)
+    public function takeTestAttempt(Request $request, Quiz $quiz, $questionNumber = 1)
     {
-        if (Session::has('currentTest') && Session::get('currentTest') != $quizId) {
+        if (Session::has('currentTest') && Session::get('currentTest') != $quiz->id) {
             return "Please finish your active test first";
         }
 
         # TODO:: make log
 //        return Carbon::now();
 
-        Session::put('currentTest', $quizId);
+        Session::put('currentTest', $quiz->id);
         $attemptedQuestions = Session::get('attemptedQuestions', []);
         $markedForReviewQuestions = Session::get('markedForReviewQuestions', []);
         $seenQuestions = Session::get('seenQuestions', []);
-
-        $quiz = Quiz::findOrFail($quizId);
 
         $questionNumber = $questionNumber-1;
         // If question number is less than 1 or more than total number of questions then abort with 404
@@ -32,7 +30,7 @@ class TestController extends Controller
         }
 
         $question = Question::with('options')
-            ->where('quiz_id', $quizId)
+            ->where('quiz_id', $quiz->id)
             ->offset($questionNumber)->firstOrFail();
 
         if (!in_array($question->id, $seenQuestions)) {
@@ -42,10 +40,10 @@ class TestController extends Controller
         $questions = $quiz->questions
             ->map(function ($question)
                 use ($attemptedQuestions, $seenQuestions, $markedForReviewQuestions) {
-                if (in_array($question->id, $attemptedQuestions)) {
-                    $question['status'] = "attempted";
-                } elseif (in_array($question->id, $markedForReviewQuestions)) {
+                if (in_array($question->id, $markedForReviewQuestions)) {
                     $question['status'] = "marked";
+                } else if (in_array($question->id, $attemptedQuestions)) {
+                    $question['status'] = "attempted";
                 } elseif (in_array($question->id, $seenQuestions)) {
                     $question['status'] = "seen";
                 } else {
@@ -56,7 +54,7 @@ class TestController extends Controller
             });
 
         return view('quiz.attempt',
-            compact('quizId', 'questions', 'question', 'questionNumber',
+            compact('quiz', 'questions', 'question', 'questionNumber',
             'attemptedQuestions', 'markedForReviewQuestions', 'seenQuestions'));
     }
 

@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class QuestionController extends Controller
 {
@@ -23,10 +24,14 @@ class QuestionController extends Controller
     /**
      * Show the form for creating a new resource.
      *
+     * @param Request $request
+     * @param Quiz $quiz
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
-    public function create()
+    public function create(Request $request, Quiz $quiz)
     {
+        Gate::authorize('update-quiz', $quiz);
+
         return view('quiz.question.create');
     }
 
@@ -37,8 +42,10 @@ class QuestionController extends Controller
      * @param Quiz $quiz
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
      */
-    public function store(Request $request, $quizId)
+    public function store(Request $request, Quiz $quiz)
     {
+        Gate::authorize('update-quiz', $quiz);
+
         $request->validate([
             'question'      => ['required', 'string', 'min:10', 'max:255'],
             'optionType'    => ['required', 'string', 'in:radio,checkbox'],
@@ -52,7 +59,7 @@ class QuestionController extends Controller
         DB::beginTransaction();
         try {
             $question = Question::create([
-                'quiz_id'     => $quizId,
+                'quiz_id'     => $quiz->id,
                 'question'    => $request->input('question'),
                 'option_type' => $request->input('optionType'),
             ]);
@@ -78,7 +85,7 @@ class QuestionController extends Controller
         if ($saveMode === 'finish') {
             return response()->redirectToRoute('quiz-list');
         }
-        return response()->redirectTo("/quiz/{$quizId}/question/add");
+        return response()->redirectTo("/quiz/{$quiz->id}/question/add");
     }
 
     /**

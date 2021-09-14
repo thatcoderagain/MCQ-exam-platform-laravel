@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quiz;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class QuizController extends Controller
@@ -26,10 +27,10 @@ class QuizController extends Controller
         return view('quiz.list')->with('quizzes', $quizzes);
     }
 
-    public function userList(Request $request, $userId)
+    public function userList(Request $request, User $user)
     {
         $quizzes = Quiz::with('user')
-            ->where('user_id', $userId)
+            ->where('user_id', $user->id)
             ->orderByDesc('id')
             ->paginate(self::PAGE_LIMIT);
         return view('quiz.list')->with('quizzes', $quizzes);

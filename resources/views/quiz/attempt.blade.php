@@ -3,10 +3,10 @@
 @section('content')
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <form id="TestAttemptForm" method="POST" action="{{ route('save-attempt', [request()->quizId]) }}">
+            <form id="TestAttemptForm" method="POST" action="{{ route('save-attempt', [request()->quiz->id]) }}">
                 @csrf
                 <div class="col-12 row" id="Quiz"
-                     data-quiz-id="{{$quizId}}"
+                     data-quiz-id="{{$quiz->id}}"
                      data-selected-question='{{$questionNumber}}'
                      data-questions='@json($questions)'
                      data-question='@json($question)'

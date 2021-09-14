@@ -25,20 +25,20 @@ Auth::routes();
 
 Route::prefix('/quiz')->group(function () {
     Route::get('/list', [QuizController::class, 'fullList'])->name('quiz-list');
-    Route::get('/user/{userId}/list', [QuizController::class, 'userList'])->name('quiz-user-list');
+    Route::get('/user/{user}/list', [QuizController::class, 'userList'])->name('quiz-user-list');
 });
 
 Route::middleware('auth')->group(function () {
     Route::prefix('/quiz')->group(function () {
         Route::get('/create', [QuizController::class, 'create'])->name('quiz-create');
         Route::post('/store', [QuizController::class, 'store'])->name('quiz-store');
-        Route::get('/{quizId}/question/add', [QuestionController::class, 'create'])->name('quiz-question-add');
-        Route::post('/{quizId}/question/store', [QuestionController::class, 'store'])->name('quiz-question-store');
+        Route::get('/{quiz}/question/add', [QuestionController::class, 'create'])->name('quiz-question-add');
+        Route::post('/{quiz}/question/store', [QuestionController::class, 'store'])->name('quiz-question-store');
 
         Route::get('/my-list', [QuizController::class, 'myList'])->name('quiz-my-list');
     });
     Route::prefix('/test')->group(function () {
-        Route::get('/quiz/{quizId}/question/{questionId}', [TestController::class, 'takeTestAttempt'])->name('take-test-attempt');
-        Route::post('/quiz/{quizId}/save', [TestController::class, 'saveTestAttempt'])->name('save-attempt');
+        Route::get('/quiz/{quiz}/question/{questionNumber}', [TestController::class, 'takeTestAttempt'])->name('take-test-attempt');
+        Route::post('/quiz/{quiz}/save', [TestController::class, 'saveTestAttempt'])->name('save-attempt');
     });
 });
