@@ -2,26 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
 use App\Models\Quiz;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 
 class TestController extends Controller
 {
     public function takeTestAttempt(Request $request, Quiz $quiz, $questionNumber = 1)
     {
-        if (Session::has('currentTest') && Session::get('currentTest') != $quiz->id) {
-            return "Please finish your active test first";
+        // Check if there is already an existing active test
+        if ($request->session()->exists('activeTest')) {
+            // Check if the active test is from different quiz return from here
+            if ($request->session()->get('activeTest.quizId') !== null &&
+                $request->session()->get('activeTest.quizId') !== $quiz->id
+            ) {
+                return response()->json(['message' => 'You have a incomplete quiz test.'], 402);
+            }
+        } else {
+            // If no active quiz then Start a fresh session for quiz test
+            $request->session()->put('activeTest.startTime', Carbon::now());
+            $request->session()->put('activeTest.endTime', Carbon::now()->addMinute($quiz->duration));
+            $request->session()->put('activeTest.quizId', $quiz->id);
+            $request->session()->put('activeTest.questions.attempted', []);
+            $request->session()->put('activeTest.questions.marked', []);
+            $request->session()->put('activeTest.questions.seen', []);
+            $request->session()->put("activeTest.answers", []);
         }
-
-        # TODO:: make log
-//        return Carbon::now();
-
-        Session::put('currentTest', $quiz->id);
-        $attemptedQuestions = Session::get('attemptedQuestions', []);
-        $markedForReviewQuestions = Session::get('markedForReviewQuestions', []);
-        $seenQuestions = Session::get('seenQuestions', []);
 
         $questionNumber = $questionNumber-1;
         // If question number is less than 1 or more than total number of questions then abort with 404
@@ -29,37 +35,76 @@ class TestController extends Controller
             abort(404);
         }
 
-        $question = Question::with('options')
-            ->where('quiz_id', $quiz->id)
-            ->offset($questionNumber)->firstOrFail();
+        // Fetch the start time of quiz
+        $quiz['startTime'] = $request->session()->get('activeTest.startTime');
+        $quiz['endTime']   = $request->session()->get('activeTest.endTime');
+        $quiz['activeQuestionNumber'] = $questionNumber;
 
-        if (!in_array($question->id, $seenQuestions)) {
-            Session::put('seenQuestions', array_merge($seenQuestions, [$question->id]));
+        $question = $quiz->getQuestion($questionNumber)->load('options');
+
+        // Fetch status of the questions in quiz test
+        $questionsStatus = $request->session()->get('activeTest.questions');
+        $answer = $request->session()->get("activeTest.answers.{$question->id}", []);
+
+        // If current question is no already in the seen array then push it and mark is as seen
+        if (!in_array($question->id, $questionsStatus['seen'])) {
+            $request->session()->push('activeTest.questions.seen', $question->id);
         }
 
         $questions = $quiz->questions
-            ->map(function ($question)
-                use ($attemptedQuestions, $seenQuestions, $markedForReviewQuestions) {
-                if (in_array($question->id, $markedForReviewQuestions)) {
+            ->map(function ($question) use ($questionsStatus) {
+                if (in_array($question->id, $questionsStatus['marked'])) {
                     $question['status'] = "marked";
-                } else if (in_array($question->id, $attemptedQuestions)) {
+                } else if (in_array($question->id, $questionsStatus['attempted'])) {
                     $question['status'] = "attempted";
-                } elseif (in_array($question->id, $seenQuestions)) {
+                } elseif (in_array($question->id, $questionsStatus['seen'])) {
                     $question['status'] = "seen";
                 } else {
                     $question['status'] = "unseen";
                 }
-                $question = $question->only(['id', 'title', 'status']);
-                return $question;
+                return $question->only(['id', 'status']);
             });
 
-        return view('quiz.attempt',
-            compact('quiz', 'questions', 'question', 'questionNumber',
-            'attemptedQuestions', 'markedForReviewQuestions', 'seenQuestions'));
+        return view('quiz.attempt', compact('quiz', 'question', 'questions', 'answer', 'questionsStatus'));
     }
 
-    public function saveTestAttempt(Request $request)
+    public function saveTestAttempt(Request $request, Quiz $quiz)
     {
-        return $request->all();
+        // Check if there is already an existing active test
+        if ($request->session()->exists('activeTest')) {
+            // Check if the active test is from different quiz return from here
+            if ($request->session()->get('activeTest.quizId') !== null &&
+                $request->session()->get('activeTest.quizId') !== $quiz->id
+            ) {
+                return response()->json(['message' => 'You have a incomplete quiz test.'], 402);
+            }
+        }
+
+        $request->validate([
+            'questionId'           => ['required', 'numeric', 'exists:App\Models\Question,id'],
+            'correctness'          => ['required', 'array'],
+            'correctness.*'        => ['required'],
+            'activeQuestionNumber' => ['required', 'numeric'],
+            'submitMode'           => ['required', 'string', 'in:submit,mark'],
+        ]);
+
+        $questionId = $request->input('questionId');
+        $answer     = $request->input('correctness');
+        $activeQuestionNumber = $request->input('activeQuestionNumber');
+
+        // Fetch status of the questions in quiz test
+        $questionsStatus = $request->session()->get('activeTest.questions');
+
+        // If current question is no already in the seen array then push it and mark is as seen
+        if (!in_array($questionId, $questionsStatus['attempted'])) {
+            $request->session()->push('activeTest.questions.attempted', $questionId);
+        }
+
+        $request->session()->put("activeTest.answers.{$questionId}", $answer);
+
+        if ($quiz->questions()->count() > $activeQuestionNumber) {
+            return redirect(route('take-test-attempt', [$quiz->id, $activeQuestionNumber+1]));
+        }
+        return "TODO SAVE TEST AND GENERATE RESULT";
     }
 }

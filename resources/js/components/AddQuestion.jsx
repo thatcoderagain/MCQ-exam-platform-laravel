@@ -107,7 +107,7 @@ export const AddQuestion = (props) => {
                         }
                         <div className="form-group col-12">
                             <label>Question</label>
-                            <textarea className="form-control" name="question" rows="3" required
+                            <textarea className="form-control" name="title" rows="3" required
                                       placeholder="C++ is an _____ programming language?"
                                       aria-describedby="questionHelp"
                                       onChange={(event) => setQuestion(event.target.value)}

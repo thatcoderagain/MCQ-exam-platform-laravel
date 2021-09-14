@@ -6,13 +6,14 @@
             <form id="TestAttemptForm" method="POST" action="{{ route('save-attempt', [request()->quiz->id]) }}">
                 @csrf
                 <div class="col-12 row" id="Quiz"
-                     data-quiz-id="{{$quiz->id}}"
-                     data-selected-question='{{$questionNumber}}'
+                     data-quiz="{{$quiz}}"
                      data-questions='@json($questions)'
                      data-question='@json($question)'
-                     data-attempted-questions='@json($attemptedQuestions)'
-                     data-marked-for-review-questions='@json($markedForReviewQuestions)'
-                     data-seen-questions='@json($seenQuestions)'
+                     data-answer='@json($answer)'
+                     data-questions-status='@json($questionsStatus)'
+                     data-attempted-questions='@json($questionsStatus['attempted'])'
+                     data-marked-questions='@json($questionsStatus['marked'])'
+                     data-seen-questions='@json($questionsStatus['seen'])'
                 >
                 </div>
             </form>

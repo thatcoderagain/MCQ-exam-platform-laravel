@@ -1,26 +1,36 @@
 import React, {Fragment, useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
+import moment from 'moment';
 import RawHTML from "./RawHTML";
 
 export const Quiz = (props) => {
+    const parsedQuiz = JSON.parse(props.quiz);
     const parsedQuestion = JSON.parse(props.question);
+    const parsedAnswer = JSON.parse(props.answer);
     const parsedQuestions = JSON.parse(props.questions);
-    const paresedseenQuestions = JSON.parse(props.seenQuestions);
-    const paresedattemptedQuestions = JSON.parse(props.attemptedQuestions);
-    const paresedmarkedForReviewQuestions = JSON.parse(props.markedForReviewQuestions);
+    const parsedQuestionsStatus = JSON.parse(props.questionsStatus);
 
-    const [quizId, setQuizId] = useState(parseInt(props.quizId));
+    const [quiz, setQuiz] = useState(parsedQuiz);
     const [question, setQuestion] = useState(parsedQuestion);
     const [questions, setQuestions] = useState(parsedQuestions);
-    const [seenQuestions, setSeenQuestions] = useState(paresedseenQuestions);
-    const [attemptedQuestions, setAttemptedQuestions] = useState(paresedattemptedQuestions);
-    const [markedForReviewQuestions, setMarkedForReviewQuestions] = useState(paresedmarkedForReviewQuestions);
-    const [selectedQuestion, setSelectedQuestion] = useState(parseInt(props.selectedQuestion));
+    const [answer, setAnswer] = useState(parsedAnswer);
+    const [seenQuestions, setSeenQuestions] = useState(parsedQuestionsStatus.seen);
+    const [attemptedQuestions, setAttemptedQuestions] = useState(parsedQuestionsStatus.attempted);
+    const [markedQuestions, setMarkedForReviewQuestions] = useState(parsedQuestionsStatus.marked);
+    const [activeQuestionNumber, setActiveQuestionNumber] = useState(quiz.activeQuestionNumber);
 
     const [options, setOptions] = useState([]);
     const [optionType, setOptionType] = useState(parsedQuestion.option_type);
+    const [submitMode, setSubmitMode] = useState('submit');
     const [error, setError] = useState('');
     const [showError, setShowError] = useState(false);
+
+    const timeLeft = moment.duration(moment(quiz.endTime).subtract(moment()) - 1000, "milliseconds");
+    const [time, setTime] = useState(timeLeft);
+
+    const timer = setTimeout(() => {
+        setTime(moment.duration(time - 1000, "milliseconds"));
+    }, 1000);
 
     const updateCorrectness = (event, index) => {
         if (optionType === 'radio') {
@@ -29,7 +39,6 @@ export const Quiz = (props) => {
             setOptions([...options, index]);
         }
     };
-
     return (
         <Fragment>
             <div className="col-4">
@@ -38,13 +47,14 @@ export const Quiz = (props) => {
                         <h3>Dashboard</h3>
                     </div>
                     <div className="card-body">
-                        <div className="col">
+                        <div className="w-25">
                             {
                                 questions.map((question, index) => {
+                                    const url = '/test/quiz/'+quiz.id+'/question/'+(index+1);
                                     let buttonColor;
-                                    if (selectedQuestion === index) {
-                                        buttonColor = 'btn-primary';
-                                    } else if (markedForReviewQuestions.includes(question.id)) {
+                                    if (activeQuestionNumber === index) {
+                                        buttonColor = 'btn-info';
+                                    } else if (markedQuestions.includes(question.id)) {
                                         buttonColor = 'btn-danger';
                                     } else if (attemptedQuestions.includes(question.id)) {
                                         buttonColor = 'btn-success';
@@ -53,9 +63,7 @@ export const Quiz = (props) => {
                                     } else {
                                          buttonColor = 'btn-secondary';
                                     }
-                                    let url = '/test/quiz/'+quizId+'/question/'+(index+1);
-                                    return <a href={url}
-                                        key={index} type="button" className={"btn btn-sm m-1 "+buttonColor}>{index+1}</a>
+                                    return (<a href={url} key={index} role="button" className={`btn btn-sm m-1 ${buttonColor}`}>{index+1}</a>);
                                 })
                             }
                         </div>
@@ -65,7 +73,7 @@ export const Quiz = (props) => {
             <div className="col-8">
                 <div className="card">
                     <div className="card-header">
-                        <h3 className="float-right">Time left: 95min</h3>
+                        <h3 className="float-right">Time left: { time.hours()}h {time.minutes()}m {time.seconds()}s</h3>
                     </div>
 
                     <div className="card-body">
@@ -77,11 +85,9 @@ export const Quiz = (props) => {
                             }
                             <div className="form-group col-12">
                                 <label>Question: </label>
-                                <textarea className="form-control" rows="3" readOnly={true}
-                                          value={question.title}
-                                          onChange={(event) => setQuestion(event.target.value)}
-                                />
+                                <textarea className="form-control" rows="3" readOnly={true} value={question.title}/>
                                 <input type="hidden" name="questionId" value={question.id}/>
+                                <input type="hidden" name="activeQuestionNumber" value={activeQuestionNumber + 1}/>
                             </div>
                             {
                                 question.options.map((option, index) =>
@@ -92,6 +98,7 @@ export const Quiz = (props) => {
                                                     <div className="input-group-text">
                                                         <input type={question.option_type === 'checkbox' ? 'checkbox' : 'radio'}
                                                                name="correctness[]"
+                                                               defaultChecked={answer.includes(`${index}`)}
                                                                value={index}
                                                                onChange={(event) => updateCorrectness(event, index)}
                                                         />
@@ -107,6 +114,7 @@ export const Quiz = (props) => {
 
                         <div className="form-group col-12">
                             <div className="form-group col-12">
+                                <input type="hidden" name="submitMode" value={submitMode}/>
                                 <button disabled={options.length < 1} type="submit" className="btn btn-primary mr-2 float-right">Proceed</button>
                             </div>
                         </div>

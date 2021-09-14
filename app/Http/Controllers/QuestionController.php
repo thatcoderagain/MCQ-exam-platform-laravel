@@ -47,7 +47,7 @@ class QuestionController extends Controller
         Gate::authorize('update-quiz', $quiz);
 
         $request->validate([
-            'question'      => ['required', 'string', 'min:10', 'max:255'],
+            'title'      => ['required', 'string', 'min:10', 'max:255'],
             'optionType'    => ['required', 'string', 'in:radio,checkbox'],
             'options'       => ['required', 'array'],
             'options.*'     => ['required', 'string', 'distinct'],
@@ -60,7 +60,7 @@ class QuestionController extends Controller
         try {
             $question = Question::create([
                 'quiz_id'     => $quiz->id,
-                'question'    => $request->input('question'),
+                'title'    => $request->input('title'),
                 'option_type' => $request->input('optionType'),
             ]);
 
