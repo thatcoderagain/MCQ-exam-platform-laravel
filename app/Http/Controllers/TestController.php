@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class TestController extends Controller
 {
+    /**
+     * Methods shows the quiz page with specific question with synced quiz state with the session.
+     *
+     * @param Request $request
+     * @param Quiz $quiz
+     * @param int $questionNumber
+     * @return \Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
+     */
     public function takeTestAttempt(Request $request, Quiz $quiz, $questionNumber = 1)
     {
         // Check if there is already an existing active test
@@ -65,9 +73,18 @@ class TestController extends Controller
                 return $question->only(['id', 'status']);
             });
 
+        $quiz = $quiz->only(['id', 'startTime', 'endTime', 'activeQuestionNumber']);
+
         return view('quiz.attempt', compact('quiz', 'question', 'questions', 'answer', 'questionsStatus'));
     }
 
+    /**
+     * Method saves the quiz state in session during a test
+     *
+     * @param Request $request
+     * @param Quiz $quiz
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
     public function saveTestAttempt(Request $request, Quiz $quiz)
     {
         // Check if there is already an existing active test
@@ -82,29 +99,73 @@ class TestController extends Controller
 
         $request->validate([
             'questionId'           => ['required', 'numeric', 'exists:App\Models\Question,id'],
-            'correctness'          => ['required', 'array'],
-            'correctness.*'        => ['required'],
+            'correctness'          => ['array'],
+            'correctness.*'        => ['nullable', 'numeric'],
             'activeQuestionNumber' => ['required', 'numeric'],
-            'submitMode'           => ['required', 'string', 'in:submit,mark'],
+            'submitMode'           => ['required', 'string', 'in:submit,mark,clear'],
         ]);
 
+        $submitMode = $request->input('submitMode');
         $questionId = $request->input('questionId');
-        $answer     = $request->input('correctness');
+        $answer     = $request->input('correctness', []);
         $activeQuestionNumber = $request->input('activeQuestionNumber');
 
         // Fetch status of the questions in quiz test
         $questionsStatus = $request->session()->get('activeTest.questions');
 
-        // If current question is no already in the seen array then push it and mark is as seen
-        if (!in_array($questionId, $questionsStatus['attempted'])) {
-            $request->session()->push('activeTest.questions.attempted', $questionId);
+        if ($submitMode == 'clear') {
+            // Set selected option(s) to be blank
+            $answer = [];
+
+            // Remove current question from attempted questions array
+            $data = $request->session()->get('activeTest.questions.attempted');
+            $this->removeValueIfExists($data, $questionId);
+            $request->session()->put('activeTest.questions.attempted', $data);
+
+            // Remove current question from marked questions array
+            $data = $request->session()->get('activeTest.questions.marked');
+            $this->removeValueIfExists($data, $questionId);
+            $request->session()->put('activeTest.questions.marked', $data);
         }
 
+        // If current question is no already in the seen array then push it and mark is as seen
+        elseif ($submitMode == 'submit' && !in_array($questionId, $questionsStatus['attempted'])) {
+            $request->session()->push('activeTest.questions.attempted', $questionId);
+
+            // Remove current question from marked questions array
+            $data = $request->session()->get('activeTest.questions.marked');
+            $this->removeValueIfExists($data, $questionId);
+            $request->session()->put('activeTest.questions.marked', $data);
+        }
+
+        // If current question is marked for review
+        elseif ($submitMode == 'mark' && !in_array($questionId, $questionsStatus['marked'])) {
+            $request->session()->push('activeTest.questions.marked', $questionId);
+        }
+
+        // Update the answer for current question in session
         $request->session()->put("activeTest.answers.{$questionId}", $answer);
 
         if ($quiz->questions()->count() > $activeQuestionNumber) {
             return redirect(route('take-test-attempt', [$quiz->id, $activeQuestionNumber+1]));
         }
-        return "TODO SAVE TEST AND GENERATE RESULT";
+        return redirect(route('take-test-attempt', [$quiz->id, 1]));
+    }
+
+    /**
+     * Function accepts an array and a value to loop-up and then remove it from the array
+     * Optionally we can pass true|false whether we want to remove first occurrence or all.
+     *
+     * @param array $array
+     * @param $value
+     * @param bool $removeAllOccurrences
+     */
+    private function removeValueIfExists (array &$array, $value, $removeAllOccurrences = true) {
+        if ($removeAllOccurrences) {
+            $array = array_unique($array);
+        }
+        if (($key = array_search($value, $array)) !== false) {
+            array_splice($array, $key, 1);
+        }
     }
 }

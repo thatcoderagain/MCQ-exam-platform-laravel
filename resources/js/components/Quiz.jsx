@@ -19,9 +19,9 @@ export const Quiz = (props) => {
     const [markedQuestions, setMarkedForReviewQuestions] = useState(parsedQuestionsStatus.marked);
     const [activeQuestionNumber, setActiveQuestionNumber] = useState(quiz.activeQuestionNumber);
 
-    const [options, setOptions] = useState([]);
+    const [options, setOptions] = useState(parsedAnswer);
     const [optionType, setOptionType] = useState(parsedQuestion.option_type);
-    const [submitMode, setSubmitMode] = useState('submit');
+    const [submitMode, setSubmitMode] = useState('');
     const [error, setError] = useState('');
     const [showError, setShowError] = useState(false);
 
@@ -32,45 +32,74 @@ export const Quiz = (props) => {
         setTime(moment.duration(time - 1000, "milliseconds"));
     }, 1000);
 
-    const updateCorrectness = (event, index) => {
-        if (optionType === 'radio') {
-            setOptions(index);
-        } else {
-            setOptions([...options, index]);
-        }
+    const clearOptions = () => {
+        $('.option-input').prop('checked', false);
+        setOptions([]);
+        setAnswer([]);
+        setSubmitMode('clear');
     };
+
+    const updateCorrectness = (event, index) => {
+        let updatedValue;
+        if (optionType === 'radio') {
+            updatedValue = [index];
+        } else {
+            if (event.target.checked) {
+                updatedValue = [...options, `${index}`.toString()];
+            } else {
+                updatedValue = options.filter((i) => parseInt(i) !== index);
+            }
+        }
+        setOptions([...updatedValue]);
+        setAnswer([...updatedValue]);
+    };
+
+    const submit = (type) => {
+        setSubmitMode(type);
+    };
+
+    useEffect(() => {
+        if (submitMode === 'submit' || submitMode === 'clear' || submitMode === 'mark') {
+            $('#TestAttemptForm').closest("form").submit();
+        }
+    }, [submitMode]);
+
     return (
-        <Fragment>
-            <div className="col-4">
+        <div className="row">
+            <div className="col-lg-3 col-md-4 col-sm-12 mb-4">
                 <div className="card">
                     <div className="card-header">
                         <h3>Dashboard</h3>
                     </div>
                     <div className="card-body">
-                        <div className="w-25">
+                        <div className="container-fluid">
+                            <div className="row align-items-center">
                             {
                                 questions.map((question, index) => {
                                     const url = '/test/quiz/'+quiz.id+'/question/'+(index+1);
                                     let buttonColor;
                                     if (activeQuestionNumber === index) {
-                                        buttonColor = 'btn-info';
-                                    } else if (markedQuestions.includes(question.id)) {
+                                        buttonColor = 'btn-primary';
+                                    } else if (markedQuestions.includes(`${question.id}`) || markedQuestions.includes(question.id)) {
                                         buttonColor = 'btn-danger';
-                                    } else if (attemptedQuestions.includes(question.id)) {
+                                    } else if (attemptedQuestions.includes(`${question.id}`) || attemptedQuestions.includes(question.id)) {
                                         buttonColor = 'btn-success';
-                                    } else if (seenQuestions.includes(question.id)) {
+                                    } else if (seenQuestions.includes(`${question.id}`) || seenQuestions.includes(question.id)) {
                                         buttonColor = 'btn-warning';
                                     } else {
                                          buttonColor = 'btn-secondary';
                                     }
-                                    return (<a href={url} key={index} role="button" className={`btn btn-sm m-1 ${buttonColor}`}>{index+1}</a>);
+                                    return <span className="col-lg-3 col-md-6 col-sm-12 my-2">
+                                        <a href={url} key={index} role="button" className={`btn-block btn btn-sm ${buttonColor}`}>{index+1}</a>
+                                    </span>
                                 })
                             }
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="col-8">
+            <div className="col-lg-9 col-md-8 col-sm-12">
                 <div className="card">
                     <div className="card-header">
                         <h3 className="float-right">Time left: { time.hours()}h {time.minutes()}m {time.seconds()}s</h3>
@@ -84,7 +113,7 @@ export const Quiz = (props) => {
                                     : <RawHTML className="col-12">{props.children}</RawHTML>
                             }
                             <div className="form-group col-12">
-                                <label>Question: </label>
+                                <label>Question: {quiz.activeQuestionNumber + 1} </label>
                                 <textarea className="form-control" rows="3" readOnly={true} value={question.title}/>
                                 <input type="hidden" name="questionId" value={question.id}/>
                                 <input type="hidden" name="activeQuestionNumber" value={activeQuestionNumber + 1}/>
@@ -97,9 +126,8 @@ export const Quiz = (props) => {
                                                 <div className="input-group-prepend">
                                                     <div className="input-group-text">
                                                         <input type={question.option_type === 'checkbox' ? 'checkbox' : 'radio'}
-                                                               name="correctness[]"
+                                                               key={index} value={index} name="correctness[]" className="option-input"
                                                                defaultChecked={answer.includes(`${index}`)}
-                                                               value={index}
                                                                onChange={(event) => updateCorrectness(event, index)}
                                                         />
                                                     </div>
@@ -115,13 +143,18 @@ export const Quiz = (props) => {
                         <div className="form-group col-12">
                             <div className="form-group col-12">
                                 <input type="hidden" name="submitMode" value={submitMode}/>
-                                <button disabled={options.length < 1} type="submit" className="btn btn-primary mr-2 float-right">Proceed</button>
+                                <button type="button" className="btn btn-outline-success mr-2 float-right"
+                                        onClick={clearOptions}>Clear</button>
+                                <button type="submit" className="btn btn-outline-danger mr-2 float-right"
+                                        disabled={options.length < 1} onClick={() => submit('mark')}>Mark for review</button>
+                                <button type="submit" className="btn btn-outline-primary mr-2 float-right"
+                                        disabled={options.length < 1} onClick={() => submit('submit')}>Proceed</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </Fragment>
+        </div>
     );
 };
 
