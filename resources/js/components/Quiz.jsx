@@ -25,6 +25,8 @@ export const Quiz = (props) => {
     const [error, setError] = useState('');
     const [showError, setShowError] = useState(false);
 
+    const [finishTest, setFinishTest] = useState(false);
+
     const timeLeft = moment.duration(moment(quiz.endTime).subtract(moment()) - 1000, "milliseconds");
     const [time, setTime] = useState(timeLeft);
 
@@ -58,18 +60,39 @@ export const Quiz = (props) => {
         setSubmitMode(type);
     };
 
+
+    const submitTest = () => {
+        if (finishTest) {
+            $('#TestAttemptForm')
+                .closest("form")
+                .prop('action', `/test/quiz/${quiz.id}/submit`)
+                .submit();
+        } else {
+            setFinishTest(true);
+            setTimeout(() => {
+                setFinishTest(false);
+            }, 3000);
+        }
+    };
+
     useEffect(() => {
         if (submitMode === 'submit' || submitMode === 'clear' || submitMode === 'mark') {
-            $('#TestAttemptForm').closest("form").submit();
+            $('#TestAttemptForm')
+                .closest("form")
+                .submit();
         }
     }, [submitMode]);
+
 
     return (
         <div className="row">
             <div className="col-lg-3 col-md-4 col-sm-12 mb-4">
                 <div className="card">
                     <div className="card-header">
-                        <h3>Dashboard</h3>
+                        <h2 className="float-left">Questions</h2>
+                        <button className={(!finishTest ? 'btn-primary' : 'btn-danger') + ' btn float-right'} type="button"
+                                onClick={submitTest}
+                        >{!finishTest ? 'Finish Test' : 'Confirm ?'}</button>
                     </div>
                     <div className="card-body">
                         <div className="container-fluid">

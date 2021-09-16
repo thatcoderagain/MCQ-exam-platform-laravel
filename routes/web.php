@@ -40,5 +40,6 @@ Route::middleware('auth')->group(function () {
     Route::prefix('/test')->group(function () {
         Route::get('/quiz/{quiz}/question/{questionNumber}', [TestController::class, 'takeTestAttempt'])->name('take-test-attempt');
         Route::post('/quiz/{quiz}/save', [TestController::class, 'saveTestAttempt'])->name('save-attempt');
+        Route::match(['GET', 'POST'],'/quiz/{quiz}/submit', [TestController::class, 'submitTest'])->name('submit-test');
     });
 });
