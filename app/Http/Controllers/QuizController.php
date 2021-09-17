@@ -76,9 +76,13 @@ class QuizController extends Controller
      * @param  \App\Models\Quiz  $quiz
      * @return \Illuminate\Http\Response
      */
-    public function show(Quiz $quiz)
+    public function show(Request $request, Quiz $quiz)
     {
-        //
+        $quizzes = Quiz::with('user')
+            ->where('id', $quiz->id)
+            ->orderByDesc('id')
+            ->paginate(self::PAGE_LIMIT);
+        return view('quiz.list')->with('quizzes', $quizzes);
     }
 
     /**

@@ -90,6 +90,7 @@ export const CreateQuiz = (props) => {
                     </div>
 
                     <div className="form-group col-12">
+                        <a href="/quiz/list/" type="button" className="btn btn-outline-danger mr-2 float-right">Cancel</a>
                         {
                             valid
                                 ? <button type="submit" className="btn btn-success mr-2 float-right">Create Quiz</button>

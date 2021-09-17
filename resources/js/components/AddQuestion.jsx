@@ -54,17 +54,17 @@ export const AddQuestion = (props) => {
 
     const hasDuplicates = (array) => {
         return (new Set(array)).size !== array.length;
-    };
+        };
 
-    const submit = (type) => {
-        setSaveMode(type);
-    };
+        const submit = (type) => {
+            setSaveMode(type);
+        };
 
-    useEffect(() => {
-        if (valid && (saveMode === 'finish' || saveMode === 'add_more')) {
-            $('#AddQuestionForm').closest("form").submit();
-        }
-    }, [saveMode]);
+        useEffect(() => {
+            if (valid && (saveMode === 'finish' || saveMode === 'add_more')) {
+                $('#AddQuestionForm').closest("form").submit();
+            }
+        }, [saveMode]);
 
     useEffect(() => {
         let valid = true;

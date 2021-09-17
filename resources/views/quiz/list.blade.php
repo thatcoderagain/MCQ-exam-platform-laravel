@@ -64,7 +64,7 @@
                                             <span class="card-link text-muted"><b>Posted at :</b> {{$quiz->created_at->diffForHumans()}}</span>
                                             <div class="btn-group btn-group-sm float-right" role="group">
                                                 @if ($quiz->user->id === auth()->id())
-                                                    <a class="btn btn-success" href="#"><b>Edit quiz</b></a>
+                                                    <a class="btn btn-success" href="{{route('quiz-question-add', [$quiz->id])}}"><b>Add more questions</b></a>
                                                 @endif
                                                 <a class="btn btn-danger" href="{{route('take-test-attempt', [$quiz->id, $questionNumber = 1])}}"><b>Take quiz</b></a>
                                             </div>

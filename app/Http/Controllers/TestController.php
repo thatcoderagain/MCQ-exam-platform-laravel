@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 
 class TestController extends Controller
 {
+    const PAGE_LIMIT = 10;
+
     /**
      * Methods shows the quiz page with specific question with synced quiz state with the session.
      *
@@ -25,7 +27,9 @@ class TestController extends Controller
             if ($request->session()->get('activeTest.quizId') !== null &&
                 $request->session()->get('activeTest.quizId') !== $quiz->id
             ) {
-                return response()->json(['message' => 'You have a incomplete quiz test.'], 402);
+                // Redirect user to already running quiz
+                $quizId = $request->session()->get('activeTest.quizId');
+                return redirect()->route('take-test-attempt', [$quizId, $questionNumber = 1]);
             }
         } else {
             // If no active quiz then Start a fresh session for quiz test
@@ -86,7 +90,7 @@ class TestController extends Controller
 
         $quiz = $quiz->only(['id', 'startTime', 'endTime', 'activeQuestionNumber']);
 
-        return view('quiz.attempt', compact('quiz', 'question', 'questions', 'answer', 'questionsStatus'));
+        return view('quiz.test', compact('quiz', 'question', 'questions', 'answer', 'questionsStatus'));
     }
 
     /**
@@ -262,8 +266,37 @@ class TestController extends Controller
         ]);
     }
 
+    /**
+     * Methods shows the test result with graphical representation.
+     *
+     * @param Request $request
+     * @param Test $test
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
     public function showTestResult(Request $request, Test $test)
     {
-        return $test;
+        return view('quiz.testResult', compact('test'));
+    }
+
+    /**
+     * Methods shows the list of test results attempted by the user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
+    public function showListOfTestResults(Request $request)
+    {
+        $tests =  auth()->user()->tests()
+            ->orderByDesc('id')
+            ->paginate(self::PAGE_LIMIT);
+
+        $test['data'] = $tests->map(function ($test) {
+                $test['passed'] = (100 * ($test->correct/$test->total)) >= 50;
+                $test['quiz_title'] = $test->quiz->title;
+                $test = $test->only(['id', 'quiz_id', 'passed', 'quiz_title', 'updated_at']);
+                return $test;
+            });
+
+        return view('quiz.testResultList', compact('tests'));
     }
 }

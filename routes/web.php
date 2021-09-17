@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{quiz}/question/add', [QuestionController::class, 'create'])->name('quiz-question-add');
         Route::post('/{quiz}/question/store', [QuestionController::class, 'store'])->name('quiz-question-store');
 
+        Route::get('/{quiz}/show/', [QuizController::class, 'show'])->name('show-quiz');
         Route::get('/my-list', [QuizController::class, 'myList'])->name('quiz-my-list');
     });
     Route::prefix('/test')->group(function () {
@@ -43,6 +44,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/{quiz}/save', [TestController::class, 'saveTestAttempt'])->name('save-attempt');
             Route::match(['GET', 'POST'],'/{quiz}/submit', [TestController::class, 'submitTest'])->name('submit-test');
         });
+        Route::get('/results', [TestController::class, 'showListOfTestResults'])->name('test-results');
         Route::get('/{test}/result', [TestController::class, 'showTestResult'])->name('test-result');
     });
 });

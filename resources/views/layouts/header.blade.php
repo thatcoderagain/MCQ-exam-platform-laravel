@@ -12,7 +12,10 @@
             <ul class="navbar-nav mr-auto">
                 @auth
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('quiz-my-list') }}">{{ __('My Quiz') }}</a>
+                        <a class="nav-link" href="{{ route('quiz-my-list') }}">{{ __('My Quizzes') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('test-results') }}">{{ __('My Results') }}</a>
                     </li>
                 @endauth
             </ul>

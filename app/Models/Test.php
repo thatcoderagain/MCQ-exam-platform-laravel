@@ -10,4 +10,12 @@ class Test extends Model
     use HasFactory;
 
     protected $fillable = ['user_id', 'quiz_id', 'total', 'correct', 'incorrect', 'unattended', 'answers', 'created_at', 'updated_at'];
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
+
+    public function quiz() {
+        return $this->belongsTo(Quiz::class);
+    }
 }
