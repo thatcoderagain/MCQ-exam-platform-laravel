@@ -149,9 +149,9 @@ export const Quiz = (props) => {
                                                 <div className="input-group-prepend">
                                                     <div className="input-group-text">
                                                         <input type={question.option_type === 'checkbox' ? 'checkbox' : 'radio'}
-                                                               key={index} value={index} name="correctness[]" className="option-input"
-                                                               defaultChecked={answer.includes(`${index}`)}
-                                                               onChange={(event) => updateCorrectness(event, index)}
+                                                               key={option.id} value={option.id} name="correctness[]" className="option-input"
+                                                               defaultChecked={answer.includes(`${option.id}`)}
+                                                               onChange={(event) => updateCorrectness(event, option.id)}
                                                         />
                                                     </div>
                                                 </div>

@@ -50,11 +50,16 @@ class TestController extends Controller
         $quiz['activeQuestionNumber'] = $questionNumber;
 
         // Submit test if time is over
-        if (Carbon::createFromTimeString($quiz['endTime']) < Carbon::now()) {
+        if ($request->session()->exists('activeTest') && Carbon::createFromTimeString($quiz['endTime']) < Carbon::now()) {
             return redirect()->action([TestController::class, 'submitTest'], ['quiz' => $quiz->id]);
         }
 
-        $question = $quiz->getQuestion($questionNumber)->load('options');
+        $question = $quiz->getQuestion($questionNumber, ['id', 'title', 'option_type']);
+
+        // Adding options with question
+        $question['options'] = $question->options()->get()->map(function ($option) {
+            return $option->only(['id', 'title']);
+        });
 
         // Fetch status of the questions in quiz test
         $questionsStatus = $request->session()->get('activeTest.questions');
@@ -65,7 +70,7 @@ class TestController extends Controller
             $request->session()->push('activeTest.questions.seen', $question->id);
         }
 
-        $questions = $quiz->questions
+        $questions = $quiz->questions()->get()
             ->map(function ($question) use ($questionsStatus) {
                 if (in_array($question->id, $questionsStatus['marked'])) {
                     $question['status'] = "marked";
@@ -120,9 +125,6 @@ class TestController extends Controller
         $questionsStatus = $request->session()->get('activeTest.questions');
 
         if ($submitMode == 'clear') {
-            // Set selected option(s) to be blank
-            $answer = [];
-
             // Remove current question from attempted questions array
             $data = $request->session()->get('activeTest.questions.attempted');
             $this->removeValueIfExists($data, $questionId);
@@ -145,15 +147,14 @@ class TestController extends Controller
             $data = $request->session()->get('activeTest.questions.marked');
             $this->removeValueIfExists($data, $questionId);
             $request->session()->put('activeTest.questions.marked', $data);
-
-            // Update the answer for current question in session
-            $request->session()->put("activeTest.answers.{$questionId}", $answer);
         }
 
         // If current question is marked for review
         elseif ($submitMode == 'mark' && !in_array($questionId, $questionsStatus['marked'])) {
             $request->session()->push('activeTest.questions.marked', $questionId);
+        }
 
+        if ($submitMode == 'submit' || $submitMode == 'mark') {
             // Update the answer for current question in session
             $request->session()->put("activeTest.answers.{$questionId}", $answer);
         }
@@ -192,28 +193,77 @@ class TestController extends Controller
             ) {
                 return response()->json(['message' => 'You have a incomplete quiz test.'], 402);
             }
+        } else {
+            return redirect()->route('quiz-list');
         }
 
         $test = $request->session()->get('activeTest');
-        return $this->evaluateTest($quiz, $test);
+        $testResult = $this->evaluateTest($quiz, $test);
 
-        return $request->session()->all();
+        // Clear test attempt from session
+        $request->session()->remove('activeTest');
+
+        return redirect()->route('test-result', [$testResult->id]);
     }
 
-    # TODO - In progress
     private function evaluateTest(Quiz $quiz, $test) {
         $answers = $test['answers'];
-        dump($answers);
-//        return $test['questions'];
-        $r = $quiz->questions()->with('options')
-            ->get()
-            ->map(function ($question) use ($answers) {
+        $correct = 0;
+        $incorrect = 0;
+        $unattended = 0;
+
+        $totalQuestions = $quiz->questions()->get()
+            ->map(function ($question) use ($answers, &$correct, &$incorrect, &$unattended) {
                 if (isset($answers[$question->id])) {
-                    dump($question->options, $answers[$question->id]);
+                    $totalCorrectionOptions = $question->options->where('correctness', 'correct')->count();
+
+                    // checked wrong answers
+                    $checkedIncorrectOptions = $question->options->where('correctness', 'incorrect')->whereIn('id', $answers[$question->id])->count();
+
+                    // not-checked right answers
+                    $notCheckedCorrectOptions = $question->options->where('correctness', 'correct')->whereNotIn('id', $answers[$question->id])->count();
+
+                    // checked correct answers
+                    $attemptedCorrectOptions = $question->options->where('correctness', 'correct')->whereIn('id', $answers[$question->id])->count();
+
+                    // Total number of correct answers do not match with total number of options checked
+                    if ($totalCorrectionOptions !== count($answers[$question->id])) {
+                        $incorrect++;
+                    }
+
+                    elseif ($checkedIncorrectOptions > 0) {
+                        $incorrect++;
+                    }
+
+                    elseif ($notCheckedCorrectOptions > 0) {
+                        $incorrect++;
+                    }
+
+                    elseif ($totalCorrectionOptions === $attemptedCorrectOptions) {
+                        $correct++;
+                    }
+
                 } else {
-                    // unattended
+                    $unattended++;
                 }
-            })->toArray();
-        dd($r);
+                return $question;
+            })->count();
+
+        return $test = Test::create([
+            'user_id'    => auth()->id(),
+            'quiz_id'    => $quiz->id,
+            'total'      => $totalQuestions,
+            'correct'    => $correct,
+            'incorrect'  => $incorrect,
+            'unattended' => $unattended,
+            'answers'    => json_encode($answers),
+            'created_at' => $test['startTime'] ?? Carbon::now(),   // Test start time of test
+            'updated_at' => Carbon::now(),                         // Test Submission time
+        ]);
+    }
+
+    public function showTestResult(Request $request, Test $test)
+    {
+        return $test;
     }
 }

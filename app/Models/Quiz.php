@@ -19,9 +19,12 @@ class Quiz extends Model
         return $this->hasMany(Question::class);
     }
 
-    public function getQuestion($questionNumber){
-        return self::questions()
-            ->offset($questionNumber)
+    public function getQuestion($questionNumber, $columns = []){
+        $question = self::questions();
+            if (count($columns)) {
+                $question = $question->select($columns);
+            }
+        return $question->offset($questionNumber)
             ->firstOrFail();
     }
 }
