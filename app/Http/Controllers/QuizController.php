@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Quiz;
 use App\Models\User;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 
 class QuizController extends Controller
@@ -12,7 +13,7 @@ class QuizController extends Controller
 
     public function fullList(Request $request)
     {
-        $quizzes = Quiz::with('user')
+        $quizzes = Quiz::with('user:id,name')
             ->orderByDesc('id')
             ->paginate(self::PAGE_LIMIT);
         return view('quiz.list')->with('quizzes', $quizzes);
@@ -20,7 +21,7 @@ class QuizController extends Controller
 
     public function myList(Request $request)
     {
-        $quizzes = Quiz::with('user')
+        $quizzes = Quiz::with('user:id,name')
             ->where('user_id', auth()->id())
             ->orderByDesc('id')
             ->paginate(self::PAGE_LIMIT);
@@ -29,7 +30,7 @@ class QuizController extends Controller
 
     public function userList(Request $request, User $user)
     {
-        $quizzes = Quiz::with('user')
+        $quizzes = Quiz::with('user:id,name')
             ->where('user_id', $user->id)
             ->orderByDesc('id')
             ->paginate(self::PAGE_LIMIT);
@@ -74,7 +75,7 @@ class QuizController extends Controller
      * Display the specified resource.
      *
      * @param  \App\Models\Quiz  $quiz
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
     public function show(Request $request, Quiz $quiz)
     {
@@ -83,6 +84,11 @@ class QuizController extends Controller
             ->orderByDesc('id')
             ->paginate(self::PAGE_LIMIT);
         return view('quiz.list')->with('quizzes', $quizzes);
+    }
+
+    public function updateNotification(Request $request, Quiz $quiz)
+    {
+        return $this->update($request, $quiz, ['notification_status']);
     }
 
     /**
@@ -99,13 +105,32 @@ class QuizController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Quiz  $quiz
-     * @return \Illuminate\Http\Response
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Quiz $quiz
+     * @param array $columnsToBeUpdated
+     * @return \Illuminate\Http\RedirectResponse|void
      */
-    public function update(Request $request, Quiz $quiz)
+    public function update(Request $request, Quiz $quiz, array $columnsToBeUpdated = [])
     {
-        //
+        if (!count($columnsToBeUpdated)) {
+            $columnsToBeUpdated = ['title', 'description', 'duration', 'user_id'];
+        }
+
+        $request->validate([
+            'notification_status' => [Rule::requiredIf(function () use ($columnsToBeUpdated) {
+                return in_array('notification_status', $columnsToBeUpdated);
+            }), 'in:on,off'],
+            // More rules to be added for other columns
+        ]);
+
+        if (in_array('notification_status', $columnsToBeUpdated)) {
+            $quiz->notification_status = $request->input('notification_status');
+        }
+
+        if ($quiz->isDirty()) {
+            $quiz->save();
+        }
+        return redirect()->back();
     }
 
     /**
