@@ -40,7 +40,7 @@ class DailyDigest extends Command
     public function handle()
     {
         try {
-            echo 'Program started\n';
+            echo "Program started\n";
             $quizAuthors = Quiz::dailyDigest();
             foreach ($quizAuthors as $author) {
 
@@ -59,7 +59,7 @@ class DailyDigest extends Command
                     }
                 }
             }
-            echo 'Program stopped\n';
+            echo "Program stopped\n";
             return 0;
         } catch (\Exception $e) {
             var_dump('Error occurred: '.$e->getMessage());

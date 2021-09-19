@@ -92,17 +92,6 @@ class QuizController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Quiz  $quiz
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Quiz $quiz)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param \Illuminate\Http\Request $request
@@ -117,11 +106,27 @@ class QuizController extends Controller
         }
 
         $request->validate([
+            'title'       => [Rule::requiredIf(function () use ($columnsToBeUpdated) {
+                return in_array('title', $columnsToBeUpdated);
+            }), 'string', 'min:10', 'max:255'],
+            'description' => [Rule::requiredIf(function () use ($columnsToBeUpdated) {
+                return in_array('description', $columnsToBeUpdated);
+            }), 'string', 'min:10'],
+            'duration'    => [Rule::requiredIf(function () use ($columnsToBeUpdated) {
+                return in_array('duration', $columnsToBeUpdated);
+            }), 'numeric', 'min:5', 'max:180'],
             'notification_status' => [Rule::requiredIf(function () use ($columnsToBeUpdated) {
                 return in_array('notification_status', $columnsToBeUpdated);
             }), 'in:on,off'],
-            // More rules to be added for other columns
         ]);
+
+        if (in_array('title', $columnsToBeUpdated)) {
+            $quiz->title = $request->input('title');
+        }
+
+        if (in_array('duration', $columnsToBeUpdated)) {
+            $quiz->duration = $request->input('duration');
+        }
 
         if (in_array('notification_status', $columnsToBeUpdated)) {
             $quiz->notification_status = $request->input('notification_status');
@@ -131,16 +136,5 @@ class QuizController extends Controller
             $quiz->save();
         }
         return redirect()->back();
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Quiz  $quiz
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Quiz $quiz)
-    {
-        //
     }
 }
